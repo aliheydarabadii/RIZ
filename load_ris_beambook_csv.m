@@ -19,3 +19,11 @@ raw = readcell(path);
 theta_sweep = cell2mat(raw(1, 2:end));          % 1×Q doubles from first row
 phi_sweep   = cell2mat(raw(2:end, 1));          % P×1 doubles from first col
 beam_book   = string(raw(2:end, 2:end));        % P×Q hex strings
+
+% Validate every config is a 64-character hexadecimal string.
+if any(strlength(beam_book(:)) ~= 64)
+    error('load_ris_beambook_csv: all configs must be 64 characters. Check %s.', path);
+end
+if any(cellfun(@isempty, regexp(cellstr(beam_book(:)), '^[0-9A-Fa-f]{64}$', 'once')))
+    error('load_ris_beambook_csv: configs must contain only hex characters [0-9A-Fa-f]. Check %s.', path);
+end

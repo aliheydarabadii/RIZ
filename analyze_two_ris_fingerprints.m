@@ -90,9 +90,9 @@ x_RIS2 = cell2mat(cellfun(@(f) mean(f,1), fp_RIS2, 'UniformOutput', false));
 %% ===== Independent normalisation =====
 % Normalise each RIS block separately to prevent one from dominating.
 
-x_RIS1_norm = zscore(x_RIS1);
-x_RIS2_norm = zscore(x_RIS2);
-x_twoRIS    = [x_RIS1_norm, x_RIS2_norm];
+[x_RIS1_norm, mu1, sigma1] = zscore_safe(x_RIS1);
+[x_RIS2_norm, mu2, sigma2] = zscore_safe(x_RIS2);
+x_twoRIS = [x_RIS1_norm, x_RIS2_norm];
 
 fprintf('Feature dimensions:\n');
 fprintf('  x_RIS1:   %d locs × %d beams\n', size(x_RIS1,1), size(x_RIS1,2));
@@ -124,9 +124,9 @@ fprintf('  x_twoRIS: %d locs × %d features\n', size(x_twoRIS,1), size(x_twoRIS,
 
 epsilon = 1e-6;
 
-% Normalise per-iteration fingerprints with the same parameters as means
-fp_RIS1_norm = normalise_with(fp_RIS1, x_RIS1);
-fp_RIS2_norm = normalise_with(fp_RIS2, x_RIS2);
+% Normalise per-iteration fingerprints using the same mu/sigma as the means.
+fp_RIS1_norm = normalise_with_params(fp_RIS1, mu1, sigma1);
+fp_RIS2_norm = normalise_with_params(fp_RIS2, mu2, sigma2);
 fp_two_norm  = cellfun(@(a,b) [a,b], fp_RIS1_norm, fp_RIS2_norm, 'UniformOutput', false);
 
 J_sep.RIS1   = compute_jsep(x_RIS1_norm, fp_RIS1_norm, epsilon);
@@ -179,22 +179,30 @@ function F = extract_fingerprints(r, condition_str)
     n_theta = max(theta_idx);
     n_iter  = max(iter_idx);
 
-    cube = zeros(n_phi, n_theta, n_iter);
+    cube = nan(n_phi, n_theta, n_iter);  % NaN so missing entries don't become fake RSSI
     for idx = 1:sum(mask)
         cube(phi_idx(idx), theta_idx(idx), iter_idx(idx)) = rssi(idx);
     end
+    if any(isnan(cube(:)))
+        warning('extract_fingerprints: missing measurements in condition "%s".', condition_str);
+    end
     % Each iteration → one row in F (1 × n_beams per iter)
-    F = zeros(n_iter, n_phi * n_theta);
+    F = nan(n_iter, n_phi * n_theta);
     for it = 1:n_iter
         F(it,:) = reshape(cube(:,:,it), 1, []);
     end
 end
 
-function fp_norm = normalise_with(fp_cell, X_mean)
-    % Apply z-score normalisation computed from X_mean to per-iteration data.
-    mu    = mean(X_mean, 1);
-    sigma = std(X_mean, 0, 1);
-    sigma(sigma == 0) = 1;   % avoid division by zero for constant beams
+function [Xn, mu, sigma] = zscore_safe(X)
+    % z-score normalisation that avoids NaN for zero-variance (constant) beams.
+    mu    = mean(X, 1);
+    sigma = std(X, 0, 1);
+    sigma(sigma == 0) = 1;   % constant beam: keep value at zero after mean subtraction
+    Xn = (X - mu) ./ sigma;
+end
+
+function fp_norm = normalise_with_params(fp_cell, mu, sigma)
+    % Apply pre-computed z-score parameters to per-iteration fingerprint data.
     fp_norm = cellfun(@(F) (F - mu) ./ sigma, fp_cell, 'UniformOutput', false);
 end
 

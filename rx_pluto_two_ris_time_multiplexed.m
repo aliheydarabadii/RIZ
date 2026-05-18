@@ -93,6 +93,9 @@ if ~DRY_RUN
 
     rxPluto(); rxPluto();
     input('Hardware ready. Press Enter to start measurements...');
+
+    % Release hardware automatically if the script errors or is interrupted.
+    cleanupObj = onCleanup(@() cleanup_hardware(rxPluto, IRShandle1, IRShandle2)); %#ok<NASGU>
 else
     warning('DRY_RUN enabled – no hardware used. RSSI values are synthetic.');
 end
@@ -223,6 +226,11 @@ fprintf('CSV saved to %s\n', csv_path);
 
 %% ===== Quick-look RSSI heatmaps =====
 
+dry_suffix = "";
+if DRY_RUN
+    dry_suffix = " [DRY RUN]";
+end
+
 if run_ris1_active
     mask     = results.condition == "RIS1_ACTIVE_RIS2_IDLE";
     rssi_1   = results.rssi_dB(mask);
@@ -233,7 +241,7 @@ if run_ris1_active
     imagesc(theta_sweep_1, phi_sweep_1, rssi_map_1);
     colormap('cool'); colorbar;
     xlabel('\theta_o (deg)'); ylabel('\phi_o (deg)');
-    title(sprintf('RIS1 active – avg RSSI heatmap%s', DRY_RUN*"  [DRY RUN]"));
+    title("RIS1 active – avg RSSI heatmap" + dry_suffix);
     axis xy; axis equal tight;
     set(findall(gcf, '-property', 'FontSize'), 'FontSize', 14);
 end
@@ -248,7 +256,16 @@ if run_ris2_active
     imagesc(theta_sweep_2, phi_sweep_2, rssi_map_2);
     colormap('cool'); colorbar;
     xlabel('\theta_o (deg)'); ylabel('\phi_o (deg)');
-    title(sprintf('RIS2 active – avg RSSI heatmap%s', DRY_RUN*"  [DRY RUN]"));
+    title("RIS2 active – avg RSSI heatmap" + dry_suffix);
     axis xy; axis equal tight;
     set(findall(gcf, '-property', 'FontSize'), 'FontSize', 14);
+end
+
+%% ===== Local functions =====
+
+function cleanup_hardware(rxPluto, IRShandle1, IRShandle2)
+    % Called automatically by onCleanup if the script errors or is interrupted.
+    try; release(rxPluto);   catch; end
+    try; clear IRShandle1;   catch; end
+    try; clear IRShandle2;   catch; end
 end
