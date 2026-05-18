@@ -261,6 +261,15 @@ if run_ris2_active
     set(findall(gcf, '-property', 'FontSize'), 'FontSize', 14);
 end
 
+%% ===== Explicit hardware cleanup =====
+% onCleanup inside a script may not fire immediately because script variables
+% persist in the base workspace. This block ensures resources are released.
+
+if ~DRY_RUN
+    release(rxPluto);
+    clear IRShandle1 IRShandle2 cleanupObj;
+end
+
 %% ===== Local functions =====
 
 function cleanup_hardware(rxPluto, IRShandle1, IRShandle2)
