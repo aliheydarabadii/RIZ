@@ -1,10 +1,14 @@
 function [theta_sweep, phi_sweep, beam_book] = load_ris_beambook_csv(path)
-%LOAD_RIS_BEAMBOOK_CSV  Load a beambook CSV produced by generate_ris_beambook.m.
+%LOAD_RIS_BEAMBOOK_CSV  Load a beambook CSV, preserving hex strings as text.
 %
 % Purpose:
-%   Robustly read a mixed numeric/string beambook CSV using readcell, which
-%   handles the header row (theta angles) and header column (phi angles)
-%   without the type-coercion issues that readtable/table2array can produce.
+%   Read a beambook CSV produced by generate_ris_beambook.m without letting
+%   MATLAB auto-convert hex config strings to numbers. readcell() silently
+%   drops leading zeros from numeric-looking strings (e.g. an all-zero config
+%   '000...0' becomes 0), corrupting the serial command. This function reads
+%   the file as plain text lines and only converts the angle headers to doubles.
+%
+% Requires MATLAB R2020b or later (uses readlines).
 %
 % Input:
 %   path        - path to the CSV file
@@ -14,13 +18,25 @@ function [theta_sweep, phi_sweep, beam_book] = load_ris_beambook_csv(path)
 %   phi_sweep   - P×1 double vector of elevation angles [degrees]
 %   beam_book   - P×Q string matrix of 64-char hex config strings
 
-raw = readcell(path);
+lines = readlines(path);
+lines = lines(strtrim(lines) ~= "");    % drop blank trailing lines
 
-theta_sweep = cell2mat(raw(1, 2:end));          % 1×Q doubles from first row
-phi_sweep   = cell2mat(raw(2:end, 1));          % P×1 doubles from first col
-beam_book   = string(raw(2:end, 2:end));        % P×Q hex strings
+% Row 1: [empty, theta_1, theta_2, ...]
+header      = strsplit(lines(1), ',');
+theta_sweep = str2double(header(2:end));   % 1×Q
 
-% Validate every config is a 64-character hexadecimal string.
+% Rows 2…end: [phi_k, hex_1, hex_2, ...]
+n_rows    = length(lines) - 1;
+phi_sweep = zeros(n_rows, 1);
+beam_book = strings(n_rows, length(theta_sweep));
+
+for k = 1:n_rows
+    parts          = strsplit(lines(k + 1), ',');
+    phi_sweep(k)   = str2double(parts(1));
+    beam_book(k,:) = strtrim(parts(2:end));   % kept as strings; no numeric conversion
+end
+
+% Validate: every config must be exactly 64 hexadecimal characters.
 if any(strlength(beam_book(:)) ~= 64)
     error('load_ris_beambook_csv: all configs must be 64 characters. Check %s.', path);
 end
