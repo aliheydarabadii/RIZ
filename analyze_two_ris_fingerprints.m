@@ -38,6 +38,17 @@ data_files = {
 location_labels = {'loc_A', 'loc_B'};
 
 % Empty-room baseline (.mat in same format), or '' to skip.
+%
+% LIMITATION – global baseline only:
+%   The current correction subtracts a single baseline mean from all
+%   measurements.  This is adequate for early testing but not for the real
+%   experiment, where system drift means you should subtract the temporally
+%   nearest interleaved empty-room baseline instead.
+%
+%   TODO: add a condition "EMPTY_BASELINE" to the acquisition script so that
+%   empty-room sweeps are interleaved with human measurements.
+%   TODO: in this script, match each human measurement to its nearest baseline
+%   by timestamp before subtracting.
 baseline_file = '';
 
 %% ===== Load data =====
@@ -101,6 +112,15 @@ fprintf('  x_twoRIS: %d locs × %d features\n', size(x_twoRIS,1), size(x_twoRIS,
 %
 %   Numerator:   between-location scatter  (larger = locations differ more)
 %   Denominator: within-location scatter   (smaller = measurements repeatable)
+%
+% WARNING – exploratory / in-sample:
+%   Normalisation parameters (mu, sigma) are computed from all loaded data,
+%   so J_sep reflects in-sample separability.  Do not use this value as a
+%   final placement performance estimate.
+%
+%   TODO: for final validation, split data into train / validation folds,
+%   compute normalisation and location means on the train fold only, and
+%   evaluate J_sep on the held-out validation fold.
 
 epsilon = 1e-6;
 

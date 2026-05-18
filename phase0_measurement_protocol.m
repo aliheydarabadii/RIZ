@@ -106,11 +106,8 @@ title('Empty-room drift – both RIS idle'); grid on;
 fprintf('\n--- Section 3: RIS settling time ---\n');
 
 % Load a small set of configs from the RIS1 beambook for this test
-bb_test = readtable('Beam_book_RIS1.csv');
-bb_test(1,:) = []; bb_test(:,1) = [];
-bb_test = table2array(bb_test);
-[nr, nc] = size(bb_test);
-test_configs = bb_test(1:min(SETTLE_CONFIGS, nr*nc));
+[~, ~, bb_test] = load_ris_beambook_csv('Beam_book_RIS1.csv');
+test_configs = bb_test(1:min(SETTLE_CONFIGS, numel(bb_test)));
 
 settle_data = zeros(SETTLE_REPEATS, length(test_configs));
 
@@ -119,7 +116,7 @@ for c = 1:length(test_configs)
     for r = 1:SETTLE_REPEATS
         raw_int16 = rxPluto();
         raw = single(raw_int16) / 2^11;
-        settle_data(r, c) = pow2db(mean(abs(raw)));
+        settle_data(r, c) = pow2db(mean(abs(raw).^2));  % mean power → dB
     end
     writeline(IRShandle1, "!0x" + idle_config_hex);
     pause(0.05);
@@ -138,13 +135,11 @@ fprintf('Inspect the plot – choose t_settle so RSSI has stabilised.\n');
 
 fprintf('\n--- Section 4: Sweep time estimate ---\n');
 
-bb1_raw = readtable('Beam_book_RIS1.csv');
-bb1_raw(1,:) = []; bb1_raw(:,1) = [];
-n_configs_1 = numel(table2array(bb1_raw));
+[~, ~, bb1] = load_ris_beambook_csv('Beam_book_RIS1.csv');
+n_configs_1 = numel(bb1);
 
-bb2_raw = readtable('Beam_book_RIS2.csv');
-bb2_raw(1,:) = []; bb2_raw(:,1) = [];
-n_configs_2 = numel(table2array(bb2_raw));
+[~, ~, bb2] = load_ris_beambook_csv('Beam_book_RIS2.csv');
+n_configs_2 = numel(bb2);
 
 t_per_config = t_settle + discard_frames * (SamplesPerFrame / SamplingRate);
 t_sweep_1    = n_configs_1 * t_per_config;

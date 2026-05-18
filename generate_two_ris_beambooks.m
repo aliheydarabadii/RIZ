@@ -18,6 +18,32 @@
 
 clc; clear; close all;
 
+%% ===== LIMITATION: angle-based only, not coordinate/placement-aware =====
+%
+% The current version accepts tx.theta / tx.phi as a shared fixed incident
+% direction and sweeps RX angles identically for both RIS panels.  It does
+% NOT account for the physical positions or orientations of the panels.
+%
+% For a real two-RIS deployment the incident and sweep angles will differ
+% between RIS1 and RIS2 because they face different directions and are at
+% different positions in the room.  Before using this for serious placement
+% optimisation you should add:
+%
+%   TODO: RIS1.pos    = [x1, y1, z1];   % panel centre position [m]
+%   TODO: RIS1.normal = [nx1, ny1, nz1]; % outward normal direction
+%   TODO: RIS2.pos    = [x2, y2, z2];
+%   TODO: RIS2.normal = [nx2, ny2, nz2];
+%   TODO: tx.pos      = [x_tx, y_tx, z_tx];
+%   TODO: rx.pos      = [x_rx, y_rx, z_rx];
+%
+%   Then compute per-RIS incident and sweep angles from geometry:
+%   TODO: tx_angle_for_RIS1 = angle from tx.pos to RIS1.pos in RIS1 frame
+%   TODO: tx_angle_for_RIS2 = angle from tx.pos to RIS2.pos in RIS2 frame
+%   TODO: sweep grid relative to each panel's normal
+%
+% Until that is done, tx.theta / tx.phi must be set manually to the
+% correct incidence angle for each panel.
+
 %% ===== Shared parameters =====
 
 f_c = 5.4e9;   % carrier frequency [Hz]
