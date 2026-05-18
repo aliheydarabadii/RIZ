@@ -266,7 +266,7 @@ end
 % persist in the base workspace. This block ensures resources are released.
 
 if ~DRY_RUN
-    release(rxPluto);
+    try; release(rxPluto); catch; end
     clear IRShandle1 IRShandle2 cleanupObj;
 end
 
