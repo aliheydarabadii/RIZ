@@ -64,8 +64,8 @@ RIS1.Mtot = 16;
 RIS1.dy   = 20e-3;   % horizontal element spacing [m]
 RIS1.dz   = 13e-3;   % vertical   element spacing [m]
 
-theta_sweep_1 = deg2rad(-60:10:60);   % azimuth  sweep [rad]
-phi_sweep_1   = deg2rad(-15:15:15);   % elevation sweep [rad]
+theta_sweep_1 = deg2rad([-40 -20 0 20 40]);   % azimuth  sweep [rad]
+phi_sweep_1   = deg2rad(0);   % elevation sweep [rad]
 
 %% ===== RIS 2 geometry =====
 
@@ -75,8 +75,8 @@ RIS2.Mtot = 16;
 RIS2.dy   = 20e-3;
 RIS2.dz   = 13e-3;
 
-theta_sweep_2 = deg2rad(-60:10:60);
-phi_sweep_2   = deg2rad(-15:15:15);
+theta_sweep_2 = deg2rad([-40 -20 0 20 40]);
+phi_sweep_2   = deg2rad(0);
 
 %% ===== Generate beambooks =====
 
