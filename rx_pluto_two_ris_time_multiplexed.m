@@ -36,8 +36,9 @@ SamplesPerFrame = 2^13;
 % Your confirmed mapping:
 % RIS1 -> /dev/cu.usbserial-D3B2Q9YP
 % RIS2 -> /dev/cu.usbserial-D3AD02VH
-COM_PORT_RIS1 = "/dev/cu.usbserial-D3B2Q9YP";
-COM_PORT_RIS2 = "/dev/cu.usbserial-D3AD02VH";
+COM_PORT_RIS1 = "/dev/cu.usbserial-D3AD02VH";
+COM_PORT_RIS2 = "/dev/cu.usbserial-D3B2Q9YP";
+
 
 BAUD_RATE = 115200;
 
